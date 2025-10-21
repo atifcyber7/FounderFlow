@@ -16,6 +16,7 @@ import Finance from '@/pages/Finance';
 import Notes from '@/pages/Notes';
 import Reports from '@/pages/Reports';
 import Team from '@/pages/Team';
+import Settings from '@/pages/Settings';
 import NotFound from '@/pages/NotFound';
 import Index from '@/pages/Index';
 
@@ -54,6 +55,7 @@ function App() {
                             <Route path="/notes" element={<Notes />} />
                             <Route path="/reports" element={<Reports />} />
                             <Route path="/team" element={<Team />} />
+                            <Route path="/settings" element={<Settings />} />
                             <Route path="*" element={<NotFound />} />
                           </Routes>
                         </main>

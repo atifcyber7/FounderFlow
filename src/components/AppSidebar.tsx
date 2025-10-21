@@ -1,4 +1,4 @@
-import { LayoutDashboard, FolderKanban, ListTodo, DollarSign, FileText, BarChart3, LogOut, Sparkles, Users } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, ListTodo, DollarSign, FileText, BarChart3, LogOut, Sparkles, Users, Settings as SettingsIcon } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
   Sidebar,
@@ -113,7 +113,28 @@ export function AppSidebar() {
               </span>
             )}
           </div>
-          <SidebarMenu>
+          <SidebarMenu className="space-y-1">
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <NavLink
+                  to="/settings"
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                      isActive
+                        ? 'bg-gradient-to-r from-primary/20 to-purple-500/20 text-primary border-l-4 border-primary font-semibold'
+                        : 'hover:bg-accent/50'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <SettingsIcon className={`h-4 w-4 ${isActive ? 'text-primary' : ''}`} />
+                      <span className="text-sm">Settings</span>
+                    </>
+                  )}
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton 
                 onClick={signOut} 
