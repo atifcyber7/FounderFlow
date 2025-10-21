@@ -22,6 +22,17 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const confirmLink = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirect_to}`;
 
+    const isPasswordReset = email_action_type === 'recovery';
+    const emailTitle = isPasswordReset ? 'Reset your password' : 'Confirm your email';
+    const emailMessage = isPasswordReset 
+      ? 'We received a request to reset your password for your <strong>FounderFlow</strong> account.'
+      : 'Thanks for signing up for <strong>FounderFlow</strong>!';
+    const buttonText = isPasswordReset ? 'Reset Password' : 'Verify Email';
+    const buttonNote = isPasswordReset
+      ? 'If you didn\'t request a password reset, you can safely ignore this email.'
+      : 'If you didn\'t create an account, you can safely ignore this email.';
+    const emailSubject = isPasswordReset ? 'Reset your password - FounderFlow' : 'Confirm your email - FounderFlow';
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -32,18 +43,18 @@ serve(async (req) => {
         <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; background-color: #f4f4f5;">
           <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
             <div style="padding: 40px 32px; text-align: center;">
-              <h1 style="color: #18181b; font-size: 28px; margin: 0 0 16px 0; font-weight: 700;">Confirm your email</h1>
+              <h1 style="color: #18181b; font-size: 28px; margin: 0 0 16px 0; font-weight: 700;">${emailTitle}</h1>
               <p style="color: #71717a; font-size: 16px; line-height: 24px; margin: 0 0 32px 0;">
-                Thanks for signing up for <strong>FounderFlow</strong>!
+                ${emailMessage}
               </p>
               <p style="color: #71717a; font-size: 16px; line-height: 24px; margin: 0 0 32px 0;">
-                Please confirm your email address by clicking the button below:
+                Please click the button below to continue:
               </p>
               <a href="${confirmLink}" style="display: inline-block; padding: 14px 32px; background-color: #18181b; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">
-                Verify Email
+                ${buttonText}
               </a>
               <p style="color: #a1a1aa; font-size: 14px; line-height: 20px; margin: 32px 0 0 0;">
-                If you didn't create an account, you can safely ignore this email.
+                ${buttonNote}
               </p>
             </div>
             <div style="padding: 24px 32px; background-color: #fafafa; border-top: 1px solid #e4e4e7;">
@@ -65,7 +76,7 @@ serve(async (req) => {
       body: JSON.stringify({
         from: "FounderFlow <onboarding@resend.dev>",
         to: [user.email],
-        subject: "Confirm your email - FounderFlow",
+        subject: emailSubject,
         html,
       }),
     });

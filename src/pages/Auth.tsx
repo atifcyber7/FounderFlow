@@ -17,6 +17,7 @@ export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -27,6 +28,16 @@ export default function Auth() {
     setLoading(true);
 
     try {
+      if (!isLogin && password !== confirmPassword) {
+        toast({
+          title: 'Validation Error',
+          description: 'Passwords do not match',
+          variant: 'destructive',
+        });
+        setLoading(false);
+        return;
+      }
+
       const data = isLogin
         ? { email, password }
         : { email, password, fullName };
@@ -129,6 +140,17 @@ export default function Auth() {
                 required
               />
             </div>
+            {!isLogin && (
+              <div className="space-y-2">
+                <Input
+                  type="password"
+                  placeholder="Confirm Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required={!isLogin}
+                />
+              </div>
+            )}
             <Button
               type="submit"
               className="w-full btn-primary"
@@ -138,16 +160,28 @@ export default function Auth() {
             </Button>
           </form>
 
-          <div className="mt-4 text-center text-sm">
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-primary hover:underline"
-            >
-              {isLogin
-                ? "Don't have an account? Sign up"
-                : 'Already have an account? Sign in'}
-            </button>
+          <div className="mt-4 text-center text-sm space-y-2">
+            {isLogin && (
+              <div>
+                <a
+                  href="/forgot-password"
+                  className="text-primary hover:underline"
+                >
+                  Forgot password?
+                </a>
+              </div>
+            )}
+            <div>
+              <button
+                type="button"
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-primary hover:underline"
+              >
+                {isLogin
+                  ? "Don't have an account? Sign up"
+                  : 'Already have an account? Sign in'}
+              </button>
+            </div>
           </div>
         </CardContent>
       </Card>
