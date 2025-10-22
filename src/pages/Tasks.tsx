@@ -18,6 +18,7 @@ interface Task {
   status: string;
   deadline: string;
   project_id: string;
+  assigned_to: string;
   projects?: { name: string };
 }
 
@@ -44,10 +45,17 @@ export default function Tasks() {
 
   const fetchTasks = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('tasks')
         .select('*, projects(name)')
         .order('created_at', { ascending: false });
+
+      // Members only see tasks assigned to them
+      if (!isAdmin && user) {
+        query = query.eq('assigned_to', user.id);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setTasks(data || []);
@@ -159,15 +167,16 @@ export default function Tasks() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Tasks</h1>
-          <p className="text-muted-foreground">Manage your tasks</p>
+          <p className="text-muted-foreground">{isAdmin ? 'Manage your tasks' : 'View your assigned tasks'}</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button className="btn-primary">
-              <Plus className="h-4 w-4 mr-2" />
-              New Task
-            </Button>
-          </DialogTrigger>
+        {isAdmin && (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button className="btn-primary">
+                <Plus className="h-4 w-4 mr-2" />
+                New Task
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Task</DialogTitle>
@@ -210,6 +219,7 @@ export default function Tasks() {
             </form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
@@ -242,6 +252,7 @@ export default function Tasks() {
                     <Select
                       value={task.status}
                       onValueChange={(value: 'todo' | 'in_progress' | 'done') => updateTaskStatus(task.id, value)}
+                      disabled={!isAdmin && task.assigned_to !== user?.id}
                     >
                       <SelectTrigger className="h-8 text-xs">
                         <SelectValue />

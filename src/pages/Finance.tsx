@@ -35,7 +35,7 @@ export default function Finance() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [dateFilter, setDateFilter] = useState<'all' | 'daily' | 'weekly' | 'monthly'>('all');
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -130,6 +130,18 @@ export default function Finance() {
   const totalIncome = records.filter(r => r.type === 'income').reduce((sum, r) => sum + Number(r.amount), 0);
   const totalExpenses = records.filter(r => r.type === 'expense').reduce((sum, r) => sum + Number(r.amount), 0);
   const profit = totalIncome - totalExpenses;
+
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Card className="card-elegant">
+          <CardContent className="pt-6">
+            <p className="text-muted-foreground">You don't have permission to access this page.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

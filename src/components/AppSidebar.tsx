@@ -20,11 +20,11 @@ export function AppSidebar() {
     { title: 'Projects', url: '/projects', icon: FolderKanban },
     { title: 'Tasks', url: '/tasks', icon: ListTodo },
     { title: 'Notes', url: '/notes', icon: FileText },
-    { title: 'Reports', url: '/reports', icon: BarChart3 },
   ];
 
   const adminItems = [
     { title: 'Finance', url: '/finance', icon: DollarSign },
+    { title: 'Reports', url: '/reports', icon: BarChart3 },
     { title: 'Team', url: '/team', icon: Users },
   ];
 
