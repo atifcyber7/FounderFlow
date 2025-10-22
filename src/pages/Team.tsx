@@ -181,20 +181,24 @@ export default function Team() {
     if (!selectedUserId) return;
 
     try {
-      // Deleting users must be done via a secure backend function using the service role key.
-      // For now, this action is disabled on the client to avoid 403 errors.
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId: selectedUserId },
+      });
+
+      if (error) throw error;
+
       toast({
-        title: 'Not available',
-        description: 'User deletion must be performed from the backend. Contact an administrator.',
-        variant: 'destructive',
+        title: 'Success',
+        description: 'User deleted successfully',
       });
 
       setDeleteDialogOpen(false);
       setSelectedUserId(null);
+      fetchUsers();
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: 'Unable to delete user.',
+        description: error.message || 'Unable to delete user.',
         variant: 'destructive',
       });
     }
