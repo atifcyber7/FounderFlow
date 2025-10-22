@@ -64,21 +64,16 @@ export default function Team() {
 
       if (rolesError) throw rolesError;
 
-      // Get user emails from auth metadata (admin only can access this through edge function)
-      const usersWithRoles = await Promise.all(
-        profiles.map(async (profile) => {
-          const role = roles.find((r) => r.user_id === profile.id);
-          
-          // Fetch email through Supabase admin API
-          const { data: authData } = await supabase.auth.admin.getUserById(profile.id);
-          
-          return {
-            ...profile,
-            email: authData?.user?.email || 'N/A',
-            role: role?.role || 'member',
-          };
-        })
-      );
+      // Get user emails without using client-side Admin API (avoid 403). If needed,
+      // implement an edge function with the service role key.
+      const usersWithRoles = profiles.map((profile) => {
+        const role = roles.find((r) => r.user_id === profile.id);
+        return {
+          ...profile,
+          email: 'Hidden',
+          role: role?.role || 'member',
+        };
+      });
 
       setUsers(usersWithRoles);
     } catch (error: any) {
@@ -186,24 +181,20 @@ export default function Team() {
     if (!selectedUserId) return;
 
     try {
-      // Note: Deleting from auth.users requires admin privileges
-      // In production, this should be done via an edge function
-      const { error } = await supabase.auth.admin.deleteUser(selectedUserId);
-
-      if (error) throw error;
-
+      // Deleting users must be done via a secure backend function using the service role key.
+      // For now, this action is disabled on the client to avoid 403 errors.
       toast({
-        title: 'Success',
-        description: 'User deleted successfully',
+        title: 'Not available',
+        description: 'User deletion must be performed from the backend. Contact an administrator.',
+        variant: 'destructive',
       });
 
       setDeleteDialogOpen(false);
       setSelectedUserId(null);
-      fetchUsers();
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: 'Unable to delete user. This requires admin privileges.',
+        description: 'Unable to delete user.',
         variant: 'destructive',
       });
     }
