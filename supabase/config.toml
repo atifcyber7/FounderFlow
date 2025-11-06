@@ -1,4 +1,5 @@
 project_id = "voqexgoageidkgglefgz"
 
+
 [functions.delete-user]
 verify_jwt = true
