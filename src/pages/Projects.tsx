@@ -6,10 +6,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Search } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { Badge } from '@/components/ui/badge';
+import { ProjectDetailPanel } from '@/components/ProjectDetailPanel';
 
 interface Project {
   id: string;
@@ -20,6 +22,12 @@ interface Project {
   deadline: string;
   status: string;
   created_at: string;
+  client_name: string | null;
+  client_email: string | null;
+  client_phone: string | null;
+  total_amount: number | null;
+  amount_paid: number | null;
+  outsourced_to: string | null;
 }
 
 export default function Projects() {
@@ -28,8 +36,11 @@ export default function Projects() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const { isAdmin, user } = useAuth();
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [detailPanelOpen, setDetailPanelOpen] = useState(false);
+  const { isAdmin, isOutsourced, user } = useAuth();
   const { toast } = useToast();
+  const [members, setMembers] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -43,14 +54,15 @@ export default function Projects() {
     client_phone: '',
     total_amount: '',
     amount_paid: '',
+    outsourced_to: '',
   });
-  
-  const [selectedProject, setSelectedProject] = useState<any>(null);
-  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+    if (isAdmin) {
+      fetchMembers();
+    }
+  }, [isAdmin]);
 
   useEffect(() => {
     const filtered = projects.filter(project =>
@@ -81,6 +93,13 @@ export default function Projects() {
     }
   };
 
+  const fetchMembers = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, full_name');
+    setMembers(data || []);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -97,6 +116,7 @@ export default function Projects() {
           client_phone: formData.client_phone || null,
           total_amount: formData.total_amount ? parseFloat(formData.total_amount) : 0,
           amount_paid: formData.amount_paid ? parseFloat(formData.amount_paid) : 0,
+          outsourced_to: formData.outsourced_to || null,
           created_by: user?.id,
         },
       ]);
@@ -121,6 +141,7 @@ export default function Projects() {
         client_phone: '',
         total_amount: '',
         amount_paid: '',
+        outsourced_to: '',
       });
       fetchProjects();
     } catch (error: any) {
@@ -143,6 +164,11 @@ export default function Projects() {
       default:
         return '';
     }
+  };
+
+  const handleProjectClick = (project: Project) => {
+    setSelectedProject(project);
+    setDetailPanelOpen(true);
   };
 
   if (loading) {
@@ -168,98 +194,123 @@ export default function Projects() {
                 New Project
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
+            <DialogContent className="max-w-2xl max-h-[90vh] p-0">
+              <DialogHeader className="p-6 pb-0">
                 <DialogTitle>Create New Project</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <Input
-                  placeholder="Project Name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-                <Textarea
-                  placeholder="Description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
-                <Textarea
-                  placeholder="Deliverables"
-                  value={formData.deliverables}
-                  onChange={(e) => setFormData({ ...formData, deliverables: e.target.value })}
-                />
-                <div className="grid grid-cols-2 gap-4">
+              <ScrollArea className="max-h-[calc(90vh-80px)] px-6 pb-6">
+                <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                   <Input
-                    type="date"
-                    placeholder="Start Date"
-                    value={formData.start_date}
-                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    placeholder="Project Name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                   />
-                  <Input
-                    type="date"
-                    placeholder="Deadline"
-                    value={formData.deadline}
-                    onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                    required
+                  <Textarea
+                    placeholder="Description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   />
-                </div>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value: any) => setFormData({ ...formData, status: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="ongoing">Ongoing</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <div className="space-y-2">
-                  <h3 className="font-medium text-sm">Client Information</h3>
-                  <Input
-                    placeholder="Client Name"
-                    value={formData.client_name}
-                    onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+                  <Textarea
+                    placeholder="Deliverables"
+                    value={formData.deliverables}
+                    onChange={(e) => setFormData({ ...formData, deliverables: e.target.value })}
                   />
-                  <Input
-                    type="email"
-                    placeholder="Client Email"
-                    value={formData.client_email}
-                    onChange={(e) => setFormData({ ...formData, client_email: e.target.value })}
-                  />
-                  <Input
-                    type="tel"
-                    placeholder="Client Phone"
-                    value={formData.client_phone}
-                    onChange={(e) => setFormData({ ...formData, client_phone: e.target.value })}
-                  />
-                </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">Start Date</label>
+                      <Input
+                        type="date"
+                        value={formData.start_date}
+                        onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">Deadline</label>
+                      <Input
+                        type="date"
+                        value={formData.deadline}
+                        onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value: any) => setFormData({ ...formData, status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="ongoing">Ongoing</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <div className="space-y-2">
+                    <h3 className="font-medium text-sm">Client Information</h3>
+                    <Input
+                      placeholder="Client Name"
+                      value={formData.client_name}
+                      onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+                    />
+                    <Input
+                      type="email"
+                      placeholder="Client Email"
+                      value={formData.client_email}
+                      onChange={(e) => setFormData({ ...formData, client_email: e.target.value })}
+                    />
+                    <Input
+                      type="tel"
+                      placeholder="Client Phone"
+                      value={formData.client_phone}
+                      onChange={(e) => setFormData({ ...formData, client_phone: e.target.value })}
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <h3 className="font-medium text-sm">Payment Information</h3>
-                  <Input
-                    type="number"
-                    placeholder="Total Project Amount"
-                    value={formData.total_amount}
-                    onChange={(e) => setFormData({ ...formData, total_amount: e.target.value })}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Amount Paid"
-                    value={formData.amount_paid}
-                    onChange={(e) => setFormData({ ...formData, amount_paid: e.target.value })}
-                  />
-                </div>
-                
-                <Button type="submit" className="w-full btn-primary">
-                  Create Project
-                </Button>
-              </form>
+                  <div className="space-y-2">
+                    <h3 className="font-medium text-sm">Outsourced To</h3>
+                    <Select
+                      value={formData.outsourced_to}
+                      onValueChange={(value) => setFormData({ ...formData, outsourced_to: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select team member" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {members.map((member) => (
+                          <SelectItem key={member.id} value={member.id}>
+                            {member.full_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="font-medium text-sm">Payment Information</h3>
+                    <Input
+                      type="number"
+                      placeholder="Total Project Amount"
+                      value={formData.total_amount}
+                      onChange={(e) => setFormData({ ...formData, total_amount: e.target.value })}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Amount Paid"
+                      value={formData.amount_paid}
+                      onChange={(e) => setFormData({ ...formData, amount_paid: e.target.value })}
+                    />
+                  </div>
+                  
+                  <Button type="submit" className="w-full btn-primary">
+                    Create Project
+                  </Button>
+                </form>
+              </ScrollArea>
             </DialogContent>
           </Dialog>
         )}
@@ -277,7 +328,11 @@ export default function Projects() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredProjects.map((project) => (
-          <Card key={project.id} className="card-elegant">
+          <Card 
+            key={project.id} 
+            className="card-elegant cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-primary/20"
+            onClick={() => handleProjectClick(project)}
+          >
             <CardHeader>
               <div className="flex justify-between items-start">
                 <CardTitle className="text-lg">{project.name}</CardTitle>
@@ -294,17 +349,12 @@ export default function Projects() {
                 <p>Start: {new Date(project.start_date).toLocaleDateString()}</p>
                 <p>Deadline: {new Date(project.deadline).toLocaleDateString()}</p>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setSelectedProject(project);
-                  setShowDetailsDialog(true);
-                }}
-                className="w-full mt-2"
-              >
-                View Details
-              </Button>
+              {/* Show budget only for non-outsourced users */}
+              {!isOutsourced && project.total_amount && (
+                <p className="text-sm font-medium text-primary">
+                  Budget: ${Number(project.total_amount).toFixed(2)}
+                </p>
+              )}
             </CardContent>
           </Card>
         ))}
@@ -316,45 +366,13 @@ export default function Projects() {
         </div>
       )}
       
-      {selectedProject && (
-        <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{selectedProject.name}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-semibold text-sm mb-2">Project Details</h3>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="text-muted-foreground">Description:</span> {selectedProject.description}</p>
-                    <p><span className="text-muted-foreground">Deliverables:</span> {selectedProject.deliverables}</p>
-                    <p><span className="text-muted-foreground">Start Date:</span> {new Date(selectedProject.start_date).toLocaleDateString()}</p>
-                    <p><span className="text-muted-foreground">Deadline:</span> {new Date(selectedProject.deadline).toLocaleDateString()}</p>
-                    <p><span className="text-muted-foreground">Status:</span> <Badge className={getStatusColor(selectedProject.status)}>{selectedProject.status}</Badge></p>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="font-semibold text-sm mb-2">Client Information</h3>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="text-muted-foreground">Name:</span> {selectedProject.client_name || 'N/A'}</p>
-                    <p><span className="text-muted-foreground">Email:</span> {selectedProject.client_email || 'N/A'}</p>
-                    <p><span className="text-muted-foreground">Phone:</span> {selectedProject.client_phone || 'N/A'}</p>
-                  </div>
-                  
-                  <h3 className="font-semibold text-sm mb-2 mt-4">Payment Information</h3>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="text-muted-foreground">Total Amount:</span> ${Number(selectedProject.total_amount || 0).toFixed(2)}</p>
-                    <p><span className="text-muted-foreground">Amount Paid:</span> ${Number(selectedProject.amount_paid || 0).toFixed(2)}</p>
-                    <p><span className="text-muted-foreground">Balance:</span> ${(Number(selectedProject.total_amount || 0) - Number(selectedProject.amount_paid || 0)).toFixed(2)}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+      {/* Project Detail Side Panel */}
+      <ProjectDetailPanel
+        project={selectedProject}
+        open={detailPanelOpen}
+        onOpenChange={setDetailPanelOpen}
+        onProjectUpdate={fetchProjects}
+      />
     </div>
   );
 }

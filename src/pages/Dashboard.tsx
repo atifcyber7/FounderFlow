@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, FolderKanban, CheckSquare, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
+import { DashboardCard } from '@/components/DashboardCard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 
 export default function Dashboard() {
   const { isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalProjects: 0,
     activeProjects: 0,
@@ -94,57 +97,40 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="card-elegant">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
-            <FolderKanban className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalProjects}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.activeProjects} active
-            </p>
-          </CardContent>
-        </Card>
+        <DashboardCard
+          title="Total Projects"
+          value={stats.totalProjects}
+          subtitle={`${stats.activeProjects} active`}
+          icon={FolderKanban}
+          to="/projects"
+        />
 
-        <Card className="card-elegant">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
-            <CheckSquare className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingTasks}</div>
-            <p className="text-xs text-muted-foreground">
-              of {stats.totalTasks} total
-            </p>
-          </CardContent>
-        </Card>
+        <DashboardCard
+          title="Pending Tasks"
+          value={stats.pendingTasks}
+          subtitle={`of ${stats.totalTasks} total`}
+          icon={CheckSquare}
+          onClick={() => navigate('/tasks?filter=pending')}
+        />
 
         {isAdmin && (
           <>
-            <Card className="card-elegant">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-                <DollarSign className="h-4 w-4 text-green-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${stats.totalEarnings.toFixed(2)}</div>
-                <p className="text-xs text-muted-foreground">Revenue</p>
-              </CardContent>
-            </Card>
+            <DashboardCard
+              title="Total Earnings"
+              value={`$${stats.totalEarnings.toFixed(2)}`}
+              subtitle="Revenue"
+              icon={DollarSign}
+              iconColor="text-green-500"
+              to="/finance"
+            />
 
-            <Card className="card-elegant">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Profit</CardTitle>
-                <TrendingUp className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${stats.profit.toFixed(2)}</div>
-                <p className="text-xs text-muted-foreground">
-                  Expenses: ${stats.totalExpenses.toFixed(2)}
-                </p>
-              </CardContent>
-            </Card>
+            <DashboardCard
+              title="Profit"
+              value={`$${stats.profit.toFixed(2)}`}
+              subtitle={`Expenses: $${stats.totalExpenses.toFixed(2)}`}
+              icon={TrendingUp}
+              to="/finance"
+            />
           </>
         )}
       </div>

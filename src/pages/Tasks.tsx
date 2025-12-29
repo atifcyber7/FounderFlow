@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus } from 'lucide-react';
+import { Plus, Filter } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { Badge } from '@/components/ui/badge';
 
@@ -23,10 +24,13 @@ interface Task {
 }
 
 export default function Tasks() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filterParam = searchParams.get('filter');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [showPendingOnly, setShowPendingOnly] = useState(filterParam === 'pending');
   const { isAdmin, user } = useAuth();
   const { toast } = useToast();
 
@@ -42,6 +46,10 @@ export default function Tasks() {
     fetchTasks();
     fetchProjects();
   }, []);
+
+  useEffect(() => {
+    setShowPendingOnly(filterParam === 'pending');
+  }, [filterParam]);
 
   const fetchTasks = async () => {
     try {
@@ -148,10 +156,22 @@ export default function Tasks() {
     }
   };
 
+  const filteredTasks = showPendingOnly 
+    ? tasks.filter(t => t.status !== 'done')
+    : tasks;
+
   const groupedTasks = {
-    todo: tasks.filter(t => t.status === 'todo'),
-    in_progress: tasks.filter(t => t.status === 'in_progress'),
-    done: tasks.filter(t => t.status === 'done'),
+    todo: filteredTasks.filter(t => t.status === 'todo'),
+    in_progress: filteredTasks.filter(t => t.status === 'in_progress'),
+    done: filteredTasks.filter(t => t.status === 'done'),
+  };
+
+  const toggleFilter = () => {
+    if (showPendingOnly) {
+      setSearchParams({});
+    } else {
+      setSearchParams({ filter: 'pending' });
+    }
   };
 
   if (loading) {
@@ -169,7 +189,16 @@ export default function Tasks() {
           <h1 className="text-3xl font-bold">Tasks</h1>
           <p className="text-muted-foreground">{isAdmin ? 'Manage your tasks' : 'View your assigned tasks'}</p>
         </div>
-        {isAdmin && (
+        <div className="flex gap-2">
+          <Button 
+            variant={showPendingOnly ? "default" : "outline"} 
+            size="sm"
+            onClick={toggleFilter}
+          >
+            <Filter className="h-4 w-4 mr-1" />
+            {showPendingOnly ? 'Showing Pending' : 'Show All'}
+          </Button>
+          {isAdmin && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button className="btn-primary">
@@ -220,6 +249,7 @@ export default function Tasks() {
           </DialogContent>
         </Dialog>
         )}
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
