@@ -177,6 +177,7 @@ export type Database = {
           client_email: string | null
           client_name: string | null
           client_phone: string | null
+          client_user_id: string | null
           created_at: string
           created_by: string
           deadline: string
@@ -184,6 +185,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          outsourced_to: string | null
           responsible_person: string | null
           start_date: string
           status: Database["public"]["Enums"]["project_status"]
@@ -195,6 +197,7 @@ export type Database = {
           client_email?: string | null
           client_name?: string | null
           client_phone?: string | null
+          client_user_id?: string | null
           created_at?: string
           created_by: string
           deadline: string
@@ -202,6 +205,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          outsourced_to?: string | null
           responsible_person?: string | null
           start_date: string
           status?: Database["public"]["Enums"]["project_status"]
@@ -213,6 +217,7 @@ export type Database = {
           client_email?: string | null
           client_name?: string | null
           client_phone?: string | null
+          client_user_id?: string | null
           created_at?: string
           created_by?: string
           deadline?: string
@@ -220,6 +225,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          outsourced_to?: string | null
           responsible_person?: string | null
           start_date?: string
           status?: Database["public"]["Enums"]["project_status"]
@@ -310,7 +316,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "member"
+      app_role: "admin" | "member" | "client" | "outsourced"
       project_status: "active" | "ongoing" | "completed"
       task_status: "todo" | "in_progress" | "done"
     }
@@ -440,7 +446,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "member"],
+      app_role: ["admin", "member", "client", "outsourced"],
       project_status: ["active", "ongoing", "completed"],
       task_status: ["todo", "in_progress", "done"],
     },
