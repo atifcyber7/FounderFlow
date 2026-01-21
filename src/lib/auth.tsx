@@ -59,7 +59,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      // Clear stale tokens if there's an error
+      if (error) {
+        console.warn('Session error, clearing stale tokens:', error.message);
+        localStorage.removeItem('sb-voqexgoageidkgglefgz-auth-token');
+      }
+      
       setSession(session);
       setUser(session?.user ?? null);
       
